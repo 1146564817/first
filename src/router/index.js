@@ -1,21 +1,24 @@
+// 导入Vue
 import Vue from 'vue'
-import sona from '../components/sona.vue'
-// 导入
+
+// 导入路由
 import VueRouter from 'vue-router'
-// 注册
+
+// 注册路由
 Vue.use(VueRouter)
-// 实例化
+
+// 准备组件
+import login from "../views/login/index.vue"
+
+// 设置路由规则
+const routes = [
+  { path:"/login",component:login }
+]
+
+// 创建路由对象
 const router = new VueRouter({
-    route: [
-        {
-            path: '*',//需要 重定项地址
-            redirect: '/'//重 定到哪里
-        },
-        {
-            path: '/',
-            component: sona
-        },
-    ]
+  routes
 })
-// 需要暴露出去
+
+// 暴露出去
 export default router
