@@ -10,10 +10,11 @@
         <span class="line"></span>
         <span class="right-titie">用户登录</span>
       </div>
-      <!-- 表单验证   el-from  饿了么ui 设置的 包裹from表单   -->     
+
+      <!-- 表单验证   el-from  饿了么ui 设置的 包裹from表单   -->
       <!-- 表单中的数据 每一行都要使用 el=from-tiem包裹才有效果  且会自动添加上下空间  但是它的宽度是父盒子的宽-->
       <!-- 解释:  :model='from'绑定一个属性 后声明的  ;abel-wodth  设置form表单的外边距  ref 设置一个定位
-       -->
+      -->
       <el-form class="login-from" :model="from" label-width="43px;" :rules="rules" ref="loginFrom">
         <!-- prop 绑定一个需要验证的属性 验证值在data里的from中设置   且prop的值必须和 v-model的值一致 不会报错但不会有效果-->
         <el-form-item class="user" prop="phone">
@@ -23,9 +24,14 @@
           <el-input v-model="from.phone" clearable prefix-icon="el-icon-user" placeholder="请输入账号"></el-input>
         </el-form-item>
 
-        <el-form-item class="login-password" prop="user">
+        <el-form-item class="login-password" prop="password">
           <!-- show=password 设置密码框  -->
-          <el-input v-model="from.user" prefix-icon="el-icon-key" show-password placeholder="请输入密码"></el-input>
+          <el-input
+            v-model="from.password"
+            prefix-icon="el-icon-key"
+            show-password
+            placeholder="请输入密码"
+          ></el-input>
         </el-form-item>
 
         <el-form-item prop="code">
@@ -38,7 +44,7 @@
               <el-input v-model="from.code" prefix-icon="el-icon-help" placeholder="请输入验证码"></el-input>
             </el-col>
             <el-col :span="7">
-              <img src="./img/login_captcha.png" alt class="codeimg" />
+              <img :src="imgUrl" @click="imgli" alt class="codeimg" />
             </el-col>
           </el-row>
         </el-form-item>
@@ -55,58 +61,113 @@
 
         <el-form-item>
           <el-button class="login-btn" type="primary" @click="loginBtn">登录</el-button>
-          <el-button class="login-btn" type="primary">注册</el-button>
+          <el-button class="login-btn" type="primary" @click="regli">注册</el-button>
         </el-form-item>
       </el-form>
     </div>
+    <!-- 图片 -->
     <img src="./img/login_banner_ele.png" alt />
+
+    <!-- 对话框 -->
+    <reg ref="reg"></reg>
   </div>
 </template>
 
 <script>
+import reg from "./components/register.vue";
+// 请求
+import { login } from "@/api/login.js";
+// 设置token
+import { setToken } from "@/utilis/token.js";
 export default {
+  // 注册组件
+  components: {
+    reg
+  },
   data() {
     return {
+      imgUrl: process.env.VUE_APP_URL + "/captcha?type=login",
+
       // 设置存储验证表单数据的值
       from: {
         phone: "",
-        user: "",
+        password: "",
         code: "",
         // 多选框  默认false
-        agree:false,
+        agree: false
       },
       // 设置验证的具体内容
       rules: {
         // required 必须填写   message  设置提示信息  trigger  提示信息触发的判断条件
         phone: [{ required: true, message: "账号不能为空", trigger: "blur" }],
-        user: [
+        password: [
           { required: true, message: "请输入密码", trigger: "blur" },
-          // min 最小输入文字  max最大输入文字 
+          // min 最小输入文字  max最大输入文字
           { min: 6, max: 12, message: "长度在 6 到 12 个字符", trigger: "blur" }
         ],
-        code: [{ required: true, message: "请输入验证码", trigger: "blur" }],
+        code: [
+          { required: true, message: "请输入验证码", trigger: "blur" },
+          { len: 4, message: "长度在 4 个字符", trigger: "blur" }
+        ],
         agree: [
-            // 多选框没有失去焦点,只要值改变事件
-            // 因为checkbox 其实他的值不可能为空  除非强行赋值为空 
-            // { required: true, message: "请输入验证码", trigger: "blur" }
-            // 
-            // 只要值为ture才满足条件 否则代表不匹配  
-            // pattern 是验证书写 正则表达式  change 属性改变进行判断
-          { pattern: /true/, message: "必须勾选同意用户协议", trigger: "change" }
+          // 多选框没有失去焦点,只要值改变事件
+          // 因为checkbox 其实他的值不可能为空  除非强行赋值为空
+          // { required: true, message: "请输入验证码", trigger: "blur" }
+          //
+          // 只要值为ture才满足条件 否则代表不匹配
+          // pattern 是验证书写 正则表达式  change 属性改变进行判断
+          {
+            pattern: /true/,
+            message: "必须勾选同意用户协议",
+            trigger: "change"
+          }
         ]
       }
     };
   },
   methods: {
+    // 验证表单 通过后 登录到首页
     loginBtn() {
-      // validate 触发表单中所有的验证信息  
-      this.$refs.loginFrom.validate(valid => {
+      // validate 触发表单中所有的验证信息
+      this.$refs.loginFrom.validate(v => {
         // 通过则显示下代码
-        if (valid) {
-          alert("登录成功");
+        if (v) {
+          login({
+            phone: this.from.phone,
+            password: this.from.password,
+            code: this.from.code,
+            withCredentials:true
+          }).then(res => {
+
+            window.console.log(res);
+            if (res.data.code == 200) {
+              // 将token值保存
+              setToken(res.data.code.token);
+              // 提示
+              this.$message.success('登录成功');
+              // 跳转到首页
+              this.$router.push("/index");
+            } else {
+              // 未通过则触发验证提示信息
+              this.$message.error(res.data.message);
+            }
+          });
         }
-        // 未通过则触发验证提示信息
+        
       });
+    },
+    // 验证码点击切换
+    imgli() {
+      // type
+      // this.imgUrl =
+      //   process.env.VUE_APP_URL + "/captcha?type=login?&t" + Date.now();
+      this.imgUrl =
+        process.env.VUE_APP_URL + "/captcha?type=login&t=" + Date.now();
+    },
+
+    // 显示对话框
+    regli() {
+      this.$refs.reg.dialogFormVisible = true;
     }
   }
 };
@@ -185,7 +246,7 @@ export default {
         .codeimg {
           width: 100%;
           height: 42px;
-          vertical-align: bottom;
+          vertical-align: top;
         }
       }
 
