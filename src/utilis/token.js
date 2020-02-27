@@ -1,7 +1,6 @@
 
 
 // 获取token 记得return
-
 export function getToken() {
 
     return window.localStorage.getItem('mmtoken')

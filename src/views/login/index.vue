@@ -60,7 +60,7 @@
         </el-form-item>
 
         <el-form-item>
-          <el-button class="login-btn" type="primary" @click="loginBtn">登录</el-button>
+          <el-button class="login-btn" type="primary" @click="loginBtn" @keyup.enter='loginBtn'>登录</el-button>
           <el-button class="login-btn" type="primary" @click="regli">注册</el-button>
         </el-form-item>
       </el-form>
@@ -142,7 +142,8 @@ export default {
             window.console.log(res);
             if (res.data.code == 200) {
               // 将token值保存
-              setToken(res.data.code.token);
+
+              setToken(res.data.data.token);
               // 提示
               this.$message.success('登录成功');
               // 跳转到首页
