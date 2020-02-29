@@ -99,7 +99,7 @@ router.afterEach((to) => {
 
   NProgress.done()
   // to and from are both route objects.
-  window.console.log('这是',to)
+  // window.console.log('这是',to)
   // window.console.log('跳转了')
   document.title=to.meta.title
 })

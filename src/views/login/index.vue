@@ -139,7 +139,7 @@ export default {
             withCredentials:true
           }).then(res => {
 
-            window.console.log(res);
+            // window.console.log(res);
             if (res.data.code == 200) {
               // 将token值保存
 
