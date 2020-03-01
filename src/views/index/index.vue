@@ -19,28 +19,18 @@
     <el-container>
       <!-- 左侧 -->
       <!-- 设置 宽度auto 可以自适应宽度 -->
-      <el-aside width="auto" class="my-aside">
-        <el-menu router :collapse="isCollapse" default-active="1" class="el-menu-vertical-demo">
-          <el-menu-item index="/index/chart">
-            <i class="el-icon-pie-chart"></i>
-            <span slot="title">数据预览</span>
+      <el-aside width="auto" class="my-aside" >
+        <el-menu router :collapse="isCollapse"  default-active="1" class="el-menu-vertical-demo">
+
+      <template v-for="(item,index) in childrenli">
+         <!--  -->
+          <el-menu-item  :key="index" :index="'/index/' + item.path" v-if="item.meta.rules.includes($store.state.roles)">
+            <i :class="item.meta.ioc"></i>
+            <span slot="title">{{ item.meta.title }}</span>
           </el-menu-item>
-          <el-menu-item index="/index/user">
-            <i class="el-icon-user"></i>
-            <span slot="title">用户列表</span>
-          </el-menu-item>
-          <el-menu-item index="/index/question">
-            <i class="el-icon-edit-outline"></i>
-            <span slot="title">题库列表</span>
-          </el-menu-item>
-          <el-menu-item index="/index/business">
-            <i class="el-icon-office-building"></i>
-            <span slot="title">企业列表</span>
-          </el-menu-item>
-          <el-menu-item index="/index/subject">
-            <i class="el-icon-notebook-2"></i>
-            <span slot="title">学科列表</span>
-          </el-menu-item>
+
+        </template>
+
         </el-menu>
       </el-aside>
 
@@ -55,14 +45,19 @@
 <script>
 import { logout } from "@/api/index.js";
 import { removeToken } from "@/utilis/token.js";
-import { store } from "@/State/state.js";
+import  childrenli  from "@/router/children.js";
+
+
+
 
 export default {
   data() {
     return {
       name: "彭彪",
       imgUrl: "",
-      isCollapse: true
+      isCollapse: true,
+      // 把路由规则存到data中
+      childrenli,
     };
   },
   methods: {
@@ -83,12 +78,9 @@ export default {
             this.$message.success("退出成功");
             // 清除内容中的token
             removeToken();
-
-            store.commit("changeUsername", res.data.data.username);
-            store.commit(
-              "changeAvatar",
-              process.env.VUE_APP_URL + "/" + res.data.data.avatar
-            );
+              // 使用vuex 操作数据  在html中使用不用加this  在js中使用需要加this.$  否则没有效果并报错
+            this.$store.commit("quUsername", '');
+            this.$store.commit("quAvatar",'');
             // 跳转到登录页面
             this.$router.push("/login");
           });

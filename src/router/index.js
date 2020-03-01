@@ -21,32 +21,35 @@ Vue.use(VueRouter)
 // 准备组件
 import login from "../views/login/index.vue"
 import index from '../views/index/index.vue'
-// 导入子路由
-import user from '../views/index/user/user.vue'
-import business from '../views/index/business/business.vue'
-import subject from '../views/index/subject/subject.vue'
-import chart from '../views/index/chart/chart.vue'
-import question from '../views/index/question/question.vue'
+import children from './children.js'
 
 // 导入vuex 
 import store from '@/State/state.js'
 
 // 设置路由规则
 const routes = [
-  { path: "/login", component: login ,meta:{title:"登录"}},
-  { path: "/", redirect: '/login',meta:{title:"登录"} },
+  { path: "/login",
+   component: login ,
+   meta:{
+     title:"登录",
+     rules: ['超级管理员', '管理员', '老师', '学生']
+  }},
+
+  { path: "/",
+   redirect: '/login',
+   meta:{
+     title:"登录",
+     rules: ['超级管理员', '管理员', '老师', '学生']
+  } },
   {
     path: "/index",
     component: index,
-    meta:{title:'首页'},
+    meta:{
+      title:'首页',
+      rules: ['超级管理员', '管理员', '老师', '学生']
+    },
     // 子路由
-    children: [
-      { path: 'user', component: user ,meta:{title:'用户列表'}},
-      { path: 'business', component: business,meta:{title:'企业列表'} },
-      { path: 'subject', component: subject,meta:{title:'学科列表'} },
-      { path: 'chart', component: chart ,meta:{title:'数据预览'}},
-      { path: 'question', component: question,meta:{title:'题库列表'} },
-    ]
+    children
   }
 ]
 
@@ -60,25 +63,63 @@ const router = new VueRouter({
 router.beforeEach((to, from, next) => {
   // window.console.log('准备跳转了')
 // 使用路由白名单
-
+// window.console.log('同',to)
   // 判断是否有token  
   // 在页面跳转是开启进度条
   NProgress.start()
   // 判断是否为login登录页面 是就直接放行
   if (to.path == '/login') {
+    
     // 运行通过
     next()
+    
   } else {
     // 对其他页面进行判断
     info().then(res => {
-      // 如果
+      window.console.log(res)
+
       if (res.data.code == 200) {
         // 运行通过
+        // vuex 全局数据保存  一定要使用 vuex里面的方法来操作数据  如果直接使用属性来操作 操作后 数据在内存中不会更改和保存
         store.commit('quUsername',res.data.data.username)
+        // 权限存储
+        store.commit('quRoles',res.data.data.role)
+        // 图片地址
         store.commit('quAvatar',process.env.VUE_APP_URL + "/" + res.data.data.avatar)
-
         
-        next()
+
+        // 判断 登录账户是否被禁用 status  1 启用  0禁用
+        if(res.data.data.status==1){
+
+          next()
+          // 只有是从登录页跳转过来的才提示登录
+          // if(from.path='login'){
+          //   Message.success('登录成功')
+          // }
+          if(from.path == '/login'){
+
+            Message.success('登录成功')
+          }
+           // 在判断是否有权限使用该页面的功能
+          if(to.meta.rules.includes(res.data.data.role)){
+          // Message.success
+          next()
+
+          }else{
+
+            Message.warning('账户权限限制,请于管理员联系')
+
+            next(from.path)
+          }
+
+        }else{
+          // 清除进度条动画
+          NProgress.done()
+          Message.error('账户登录限制,请于管理员联系')
+          // 打回登录页
+          next('/login')
+        }
+        
       } else {
          // 清除进度条动画
         NProgress.done()

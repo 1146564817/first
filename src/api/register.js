@@ -22,3 +22,11 @@ export function upimgApi(data){
         withCredentials:true,
     })
 }
+export function registerid(data){
+    return axios({
+        url:process.env.VUE_APP_URL+'/register',
+        method:'post',
+        data,
+        withCredentials:true,
+    })
+}

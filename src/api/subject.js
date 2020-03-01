@@ -1,6 +1,7 @@
 import axios from "axios";
 import { getToken } from '@/utilis/token.js'
 
+// 克隆一个路由对象 并赋值给变量
 let subjectRequest = axios.create({
     baseURL: process.env.VUE_APP_URL,
     // headers: {

@@ -25,8 +25,8 @@
         <el-input v-model="form.name" autocomplete="off"></el-input>
       </el-form-item>
 
-      <el-form-item label="邮箱" prop="mailbox" :label-width="formLabelWidth">
-        <el-input v-model="form.mailbox" autocomplete="off"></el-input>
+      <el-form-item label="邮箱" prop="email" :label-width="formLabelWidth">
+        <el-input v-model="form.email" autocomplete="off"></el-input>
       </el-form-item>
 
       <el-form-item label="手机" prop="phone" :label-width="formLabelWidth">
@@ -73,11 +73,13 @@
 
 <script>
 // import axios from "axios";    @在vue-li中 就是手脚架中  @相当于src文件夹
-import { regApi, upimgApi } from "@/api/register.js";
+import { regApi,registerid } from "@/api/register.js";
 export default {
+  name:'arr',
   data() {
     return {
       // 要上传的文件地址
+      // uploadUrl: process.env.VUE_APP_URL + "/uploads",
       uploadUrl: process.env.VUE_APP_URL + "/uploads",
       // 临时上传图片
       imageUrl: "",
@@ -94,7 +96,7 @@ export default {
       form: {
         avatar: "", //图片上传
         name: "", //昵称
-        mailbox: "", // 邮箱
+        email: "", // 邮箱
         phone: "", //手机
         password: "", //密码
         imgCode: "", //图形码
@@ -112,7 +114,7 @@ export default {
           {
             pattern: /\w[-\w.+]*@([A-Za-z0-9][-A-Za-z0-9]+\.)+[A-Za-z]{2,14}/,
             message: "邮箱格式不正确",
-            trigger: "change"
+            trigger: "blur"
           }
         ],
         // 手机
@@ -121,7 +123,7 @@ export default {
           {
             pattern: /0?(13|14|15|18|17)[0-9]{9}/,
             message: "手机格式不正确",
-            trigger: "change"
+            trigger: "blur"
           }
         ],
         // 密码
@@ -144,30 +146,68 @@ export default {
     };
   },
   methods: {
-   
     //  在点击确定时 验证表单信息  注意点   上传图片的img不是表单信息 需要手动设置和消除属性
     btnVer() {
       this.$refs.regFrom.validate(v => {
         if (v) {
           // 在外面插入的请求方法  直接输入请求值
-          upimgApi({
+          registerid({
             username: this.form.name,
             phone: this.form.phone,
-            email: this.form.mailbox,
+            email: this.form.email,
             avatar: this.form.avatar,
             password: this.form.password,
-            rcode: this.form.idcoed
+            rcode: this.form.rcode
           }).then(res => {
             window.console.log(res);
             if (res.data.code == 200) {
               this.$massage.success("注册成功!");
+                // 注册成功则清空表单的数据
               this.$refs.regFrom.resetFields();
+              // 头像需要单独设置为空
               this.imageUrl = "";
+            }else{
+              this.$message.error(res.data.message)
             }
           });
         }
       });
     },
+    // 上传事件
+    // 图片成功回调函数  res响应报文  file文件信息
+    handleAvatarSuccess(res, file) {
+       window.console.log(res);
+
+      // 将文件的临时路径赋值给前面的变量
+      this.imageUrl = URL.createObjectURL(file.raw);
+      // 图片是img  所以  avatar 没有值需要 上传成功后赋值给它 才有值  有了值才能验证
+      // this.form.avatar = res.data.file_paht;
+      this.form.avatar = res.data.file_path;
+
+      // 因为img不是表单元素  所以需要单独设置一个验证事件
+      this.$refs.regFrom.validateField("avatar");
+
+    },
+
+    
+    // 图片上传前进行判断函数
+    beforeAvatarUpload(file) {
+      // 图片格式
+       const isJPG = file.type === "image/jpeg" || "image/png" || "image/gif";
+      // 图片大小
+      const isLt2M = file.size / 1024 / 1024 < 2;
+
+      if (!isJPG) {
+        this.$message.error("上传头像图片只能是 JPG 格式!");
+      }
+      if (!isLt2M) {
+        this.$message.error("上传头像图片大小不能超过 2MB!");
+      }
+      return isJPG && isLt2M;
+    },
+
+
+
     // 图片点击转换
     codclick() {
       this.imgRefresh =
@@ -206,54 +246,12 @@ export default {
             "成功获取验证码,验证码为" + res.data.data.captcha
           );
         } else {
+          this.sec=0
           this.$message.error(res.data.message);
         }
       });
-
-      // axios({
-      //   url: process.env.VUE_APP_URL + "/sendsms",
-      //   method: "post",
-      //   data: {
-      //     code: this.form.idcoed,
-      //     phone: this.form.phone
-      //   },
-      //   // 允许带cookie
-      //   // withCredentials:true,
-      //   withCredentials: true
-      // }).then(res => {
-      //   window.console.log(res);
-      // });
     },
 
-    // 上传事件
-    // 图片成功回调函数  res响应报文  file文件信息
-    handleAvatarSuccess(res, file) {
-      // window.console.log(res);
-      // window.console.log(file);
-      // 将文件的临时路径赋值给前面的变量
-      this.imageUrl = URL.createObjectURL(file.raw);
-      // 图片是img  所以  avatar 没有值需要 上传成功后赋值给它 才有值  有了值才能验证
-      // this.form.avatar = res.data.file_paht;
-      this.form.avatar = res.data.file_path;
-
-      // 因为img不是表单元素  所以需要单独设置一个验证事件
-      this.$refs.regFrom.validateField("avatar");
-    },
-    // 图片上传前进行判断函数
-    beforeAvatarUpload(file) {
-      // 图片格式
-      const isJPG = file.type === "image/jpeg";
-      // 图片大小
-      const isLt2M = file.size / 1024 / 1024 < 2;
-
-      if (!isJPG) {
-        this.$message.error("上传头像图片只能是 JPG 格式!");
-      }
-      if (!isLt2M) {
-        this.$message.error("上传头像图片大小不能超过 2MB!");
-      }
-      return isJPG && isLt2M;
-    }
   }
 };
 </script>
